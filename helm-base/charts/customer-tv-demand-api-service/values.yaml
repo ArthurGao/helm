@@ -1,0 +1,23 @@
+# Production config
+
+replicaCount: 1
+
+image:
+  name: customer-tv-demand-api-service
+  pullPolicy: Always
+  tag: "0.1.0"
+
+service:
+  http:
+    port: 8080
+
+jvm:
+  javaOpts: -Xms1g -Xmx1g
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1024Mi
+  requests:
+    cpu: 500m
+    memory: 512Mi

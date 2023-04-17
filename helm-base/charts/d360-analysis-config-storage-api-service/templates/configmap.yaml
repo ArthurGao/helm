@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "app.fullname" . }}-configmap
+  labels: {{ include "app.labels" . | nindent 4 }}
+  namespace: {{ .Release.Namespace }}
+data:
+  app_mysql_port: {{ .Values.global.db.mysql.port | quote }}
+  app_jvm_javaOpts: {{ .Values.jvm.javaOpts }}
+  app_redis_port: {{ .Values.global.redis.port | quote }}
+  app_redis_host: {{ .Values.global.redis.host | quote }}
+  app_internal_token_store_name: {{ .Values.global.app.internalTokenStoreName | quote }}

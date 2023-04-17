@@ -1,0 +1,109 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "app.name" . }}
+  labels: {{ include "app.labels" . | nindent 4 }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "app.name" . }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      labels: {{ include "app.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ template "app.serviceAccountName" . }}
+      volumes:
+        - name: secrets-store-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ template "app.secretProviderClassName" . }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: alpha.eksctl.io/nodegroup-name
+                operator: In
+                values:
+                - ng-private
+      containers:
+      - image: 934214132858.dkr.ecr.us-east-1.amazonaws.com/{{ .Values.image.name }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+        name: {{ include "app.name" . }}
+        volumeMounts:
+          - name: secrets-store-inline
+            mountPath: "/mnt/secrets-store"
+            readOnly: true
+        ports:
+        - name: http
+          protocol: TCP
+          containerPort: {{ .Values.service.http.port }}
+        - name: grpc
+          protocol: TCP
+          containerPort: {{ .Values.service.grpc.port }}
+        env:
+        - name: APP_MYSQL_HOST_URL
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "app.dbsecrets.secretName" . }}
+              key: host
+        - name: APP_MYSQL_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: {{ template "app.fullname" . }}-configmap
+              key: app_mysql_port
+        - name: APP_MYSQL_USER_NAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "app.dbsecrets.secretName" . }}
+              key: username
+        - name: APP_MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "app.dbsecrets.secretName" . }}
+              key: password
+        - name: APP_OPEN_SEARCH_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: {{ template "app.fullname" . }}-configmap
+              key: app_open_search_host
+        - name: APP_JWT_ECDH_EXTERNAL_PRIVATE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "app.jwtsecrets.external.secretName" . }}
+              key: jwt_signature_privatekey
+        - name: APP_JWT_ECDH_INTERNAL_PRIVATE_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "app.jwtsecrets.internal.secretName" . }}
+              key: internal_jwt_signature_privatekey
+        - name: APP_JWT_INTERNAL_TOKEN_CACHE_STORE_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: {{ template "app.fullname" . }}-configmap
+              key: app_jwt_internal_token_cache_name
+        - name: APP_REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: {{ template "app.fullname" . }}-configmap
+              key: app_redis_host
+        - name: APP_REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: {{ template "app.fullname" . }}-configmap
+              key: app_redis_port
+        - name: JAVA_OPTS
+          valueFrom:
+            configMapKeyRef:
+              name: {{ template "app.fullname" . }}-configmap
+              key: app_jvm_javaOpts
+        resources:
+{{ toYaml .Values.resources | indent 10}}
+      terminationGracePeriodSeconds: 30

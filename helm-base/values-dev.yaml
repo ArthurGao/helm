@@ -1,0 +1,39 @@
+customer-tv-demand-api-service:
+  enabled: false
+d360-analysis-config-storage-api-service:
+  enabled: false
+audience-insights-api-service:
+  enabled: true
+
+global:
+  # IAM role name to pull secrets for DB access
+  secrets:
+    database:
+      iamRoleName: "nodegroup-eks-apps"
+      secretKey: "demand360-api-dev_apiuser_rw"
+    jwt:
+      iamRoleName: "nodegroup-eks-apps"
+      secretKey: "apikey_ext_auth_service_jwt_dev_key"
+    jwtExternalPrivateKey:
+      awsSecretKeyName: "demand360_jwt_privatekey_dev"
+    jwtInternalPrivateKey:
+      awsSecretKeyName: "demand360_internal_jwt_privatekey_dev"
+      cacheName: "demand-360::jwt_internal_tokens"
+  # Port is present as an example the value actually comes from the secret manager
+  db:
+    mysql:
+      port: 3306
+    opensearch:
+      host: https://vpc-pa-apps-es-aet2ensnr6tisdhpfl3uyvrmcu.us-east-1.es.amazonaws.com
+  jwt:
+    token:
+      keyId: parrotanalytics.apikey-ext-auth-service.dev 
+  grpcclients:
+    metricsservice:
+      host: metrics-service.api.svc.cluster.local
+      port: 9090
+  app:
+    internalTokenStoreName: "demand-360::jwt_internal_tokens"
+  redis:
+    host: redis-master
+    port: 6379

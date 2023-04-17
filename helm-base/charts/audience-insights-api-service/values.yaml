@@ -1,0 +1,26 @@
+# Default values for audience-insights-api-service
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  name: audience-insights-api-service
+  pullPolicy: Always
+  tag: "0.3.1"
+
+service:
+  http:
+    port: 8080
+  grpc:
+    port: 9090
+
+jvm:
+  javaOpts: -Xms1g -Xmx1g
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1024Mi
+  requests:
+    cpu: 500m
+    memory: 512Mi
